@@ -27,14 +27,14 @@ function create_drop()
 	drop.x = rnd(128)
 	drop.y = initial_y()
 	drop.z = rnd(20)
-	drop.len=4+drop.z/4
+	drop.len = 4+drop.z/4
 	drop.yspeed=yspeed_from(drop.z)
 	return drop
 end
 
 function fall_drop(d)
-	d.y+=d.yspeed
-	d.yspeed+=0.05
+	d.y += d.yspeed
+	d.yspeed += 0.098
 	if(d.y > 128) then
 		d.y=initial_y()
 		d.yspeed=yspeed_from(d.z)
