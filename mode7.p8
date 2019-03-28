@@ -2,66 +2,51 @@ pico-8 cartridge // http://www.pico-8.com
 version 16
 __lua__
 function _init()
-	fWorldX = 0
-	fWorldY = 0
-	fWorldA = 0.1
-	fNear = 10
-	fFar = 50
-	fFoVHalf = 3.14159 / 4.0
+	my_x = 0
+	my_y = 0
+	my_angle = 0.1
+	near_distance = 0
+	far_distance = 10
+	field_of_view_half = 3.14159 / 8.0
 
-	nMapSize = 128
+	map_size = 128
 end
 
 function _update()
-	fWorldX = fWorldX
-	fWorldY = fWorldY
-	fWorldA = fWorldA + 0.001
+	my_x = my_x
+	my_y = (my_y + 1) % map_size
+	my_angle = (my_angle + 0.001) % (2 * 3.14159)
 end
 
 function _draw()
 	cls()
 	
-	-- Create Frustum corner points
-	fFarX1 = fWorldX + cos(fWorldA - fFoVHalf) * fFar
-	fFarY1 = fWorldY + sin(fWorldA - fFoVHalf) * fFar
+	far_x1 = my_x + cos(my_angle - field_of_view_half) * far_distance
+	far_y1 = my_y + sin(my_angle - field_of_view_half) * far_distance
 
-	fNearX1 = fWorldX + cos(fWorldA - fFoVHalf) * fNear
-	fNearY1 = fWorldY + sin(fWorldA - fFoVHalf) * fNear
+	near_x1 = my_x + cos(my_angle - field_of_view_half) * near_distance
+	near_y1 = my_y + sin(my_angle - field_of_view_half) * near_distance
 
-	fFarX2 = fWorldX + cos(fWorldA + fFoVHalf) * fFar
-	fFarY2 = fWorldY + sin(fWorldA + fFoVHalf) * fFar
+	far_x2 = my_x + cos(my_angle + field_of_view_half) * far_distance
+	far_y2 = my_y + sin(my_angle + field_of_view_half) * far_distance
 
-	fNearX2 = fWorldX + cos(fWorldA + fFoVHalf) * fNear
-	fNearY2 = fWorldY + sin(fWorldA + fFoVHalf) * fNear
+	near_x2 = my_x + cos(my_angle + field_of_view_half) * near_distance
+	near_y2 = my_y + sin(my_angle + field_of_view_half) * near_distance
 	
-	print('fFarX1 '..fFarX1)
-	print('fFarY1 '..fFarY1)
-	print('fFarX2 '..fFarX2)
-	print('fFarY2 '..fFarY2)
-	print('fNearX1 '..fNearX1)
-	print('fNearY1 '..fNearY1)
-	print('fNearX2 '..fNearX2)
-	print('fNearY2 '..fNearY2)
-
-	-- Starting with furthest away line and work towards the camera point
 	for y = 0,64 do
-		-- Take a sample point for depth linearly related to rows down screen
-		fSampleDepth = y / 64.0	
+		proj_depth = y / 64.0	
+		
+		proj_start_x = (far_x1 - near_x1) / (proj_depth) + near_x1
+		proj_start_y = (far_y1 - near_y1) / (proj_depth) + near_y1
+		proj_end_x = (far_x2 - near_x2) / (proj_depth) + near_x2
+		proj_end_y = (far_y2 - near_y2) / (proj_depth) + near_y2
 
-		-- Use sample point in non-linear (1/x) way to enable perspective
-		-- and grab start and end points for lines across the screen
-		fStartX = (fFarX1 - fNearX1) / (fSampleDepth) + fNearX1
-		fStartY = (fFarY1 - fNearY1) / (fSampleDepth) + fNearY1
-		fEndX = (fFarX2 - fNearX2) / (fSampleDepth) + fNearX2
-		fEndY = (fFarY2 - fNearY2) / (fSampleDepth) + fNearY2
-
-		-- Linearly interpolate lines across the screen
 		for x = 0,128 do
-			fSampleWidth = x / 128.0
-			fSampleX = (fEndX - fStartX) * fSampleWidth + fStartX
-			fSampleY = (fEndY - fStartY) * fSampleWidth + fStartY
+			proj_width = x / 128.0
+			proj_x = (proj_end_x - proj_start_x) * proj_width + proj_start_x
+			proj_y = (proj_end_y - proj_start_y) * proj_width + proj_start_y
 
-			pset(x, y + 64, bitmap_color(fSampleX, fSampleY))
+			pset(x, y + 64, bitmap_color(proj_x, proj_y))
 		end
 	end
 	
@@ -69,8 +54,8 @@ end
 
 function bitmap_color(x, y)
 	if (x % 10 < 6 and y % 10 < 6) then
-		return 2
+		return 12
 	else
-		return 3
+		return 2
 	end
 end
